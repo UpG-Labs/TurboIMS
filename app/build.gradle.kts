@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -24,10 +25,14 @@ android {
     }
     buildFeatures {
         buildConfig = true
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
-            excludes += "**"
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
     lint {
@@ -43,4 +48,11 @@ dependencies {
     implementation(libs.shizuku.provider)
     implementation(libs.shizuku.api)
     implementation(libs.hiddenapibypass)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.activity.compose)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.lifecycle.viewmodel.ktx)
 }

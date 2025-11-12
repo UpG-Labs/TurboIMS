@@ -1,51 +1,48 @@
-package io.github.vvb2060.ims;
+package io.github.vvb2060.ims
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Configuration;
-import android.content.res.Resources;
+import android.content.Context
+import android.content.res.Configuration
+import java.util.Locale
 
-import java.util.Locale;
+object LocaleHelper {
+    private const val PREF_NAME = "locale_config"
+    private const val KEY_LANGUAGE = "language"
 
-public class LocaleHelper {
-    private static final String PREF_NAME = "locale_config";
-    private static final String KEY_LANGUAGE = "language";
+    fun setLocale(context: Context, languageCode: String) {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_LANGUAGE, languageCode).apply()
 
-    public static void setLocale(Context context, String languageCode) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putString(KEY_LANGUAGE, languageCode).apply();
-
-        updateResources(context, languageCode);
+        updateResources(context, languageCode)
     }
 
-    public static String getLanguage(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+    fun getLanguage(context: Context): String {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         // 如果用户已经手动设置过语言，使用用户设置
         if (prefs.contains(KEY_LANGUAGE)) {
-            return prefs.getString(KEY_LANGUAGE, "zh");
+            return prefs.getString(KEY_LANGUAGE, "zh")!!
         }
 
         // 否则根据系统语言自动判断
-        String systemLang = Locale.getDefault().getLanguage();
+        val systemLang = Locale.getDefault().getLanguage()
         // 如果系统语言是中文（包括简体、繁体等），使用中文，否则使用英文
-        return systemLang.startsWith("zh") ? "zh" : "en";
+        return if (systemLang.startsWith("zh")) "zh" else "en"
     }
 
-    public static void updateResources(Context context, String languageCode) {
-        Locale locale = new Locale(languageCode);
-        Locale.setDefault(locale);
+    fun updateResources(context: Context, languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
 
-        Resources resources = context.getResources();
-        Configuration config = new Configuration(resources.getConfiguration());
-        config.setLocale(locale);
-        context.createConfigurationContext(config);
-        resources.updateConfiguration(config, resources.getDisplayMetrics());
+        val resources = context.getResources()
+        val config = Configuration(resources.getConfiguration())
+        config.setLocale(locale)
+        context.createConfigurationContext(config)
+        resources.updateConfiguration(config, resources.getDisplayMetrics())
     }
 
-    public static String toggleLanguage(Context context) {
-        String currentLang = getLanguage(context);
-        String newLang = currentLang.equals("zh") ? "en" : "zh";
-        setLocale(context, newLang);
-        return newLang;
+    fun toggleLanguage(context: Context): String {
+        val currentLang = getLanguage(context)
+        val newLang = if (currentLang == "zh") "en" else "zh"
+        setLocale(context, newLang)
+        return newLang
     }
 }
