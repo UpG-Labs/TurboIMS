@@ -45,8 +45,9 @@ jobs:
         echo "versionName=$versionName" >> $GITHUB_OUTPUT
         echo "versionCode=$versionCode" >> $GITHUB_OUTPUT
     - name: Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ steps.apk.outputs.versionName }}-${{ steps.apk.outputs.versionCode }}
+        tag_name: ${{ steps.apk.outputs.versionName }}
+        body_path: CHANGELOG.md
         files: |
           outputs/TurbolIms.apk
