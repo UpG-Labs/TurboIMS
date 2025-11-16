@@ -54,6 +54,12 @@ enum class Feature(
         R.string._5g_nr,
         R.string._5g_nr_desc,
     ),
+    FIVE_G_THRESHOLDS(
+        "5g_thresholds",
+        FeatureValueType.BOOLEAN,
+        R.string._5g_thresholds,
+        R.string._5g_thresholds_desc,
+    )
 }
 
 enum class FeatureValueType {

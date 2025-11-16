@@ -114,6 +114,7 @@ class PrivilegedProcess : Instrumentation() {
         val enableCrossSIM = prefs.getBoolean(Feature.CROSS_SIM.key, true)
         val enableUT = prefs.getBoolean(Feature.UT.key, true)
         val enable5GNR = prefs.getBoolean(Feature.FIVE_G_NR.key, true)
+        val enable5GThreshold = prefs.getBoolean(Feature.FIVE_G_THRESHOLDS.key, true)
 
         val bundle = PersistableBundle()
 
@@ -184,15 +185,17 @@ class PrivilegedProcess : Instrumentation() {
                     CarrierConfigManager.CARRIER_NR_AVAILABILITY_SA
                 )
             )
-            bundle.putIntArray(
-                CarrierConfigManager.KEY_5G_NR_SSRSRP_THRESHOLDS_INT_ARRAY,  // Boundaries: [-140 dBm, -44 dBm]
-                intArrayOf(
-                    -128,  /* SIGNAL_STRENGTH_POOR */
-                    -118,  /* SIGNAL_STRENGTH_MODERATE */
-                    -108,  /* SIGNAL_STRENGTH_GOOD */
-                    -98,  /* SIGNAL_STRENGTH_GREAT */
+            if (enable5GThreshold) {
+                bundle.putIntArray(
+                    CarrierConfigManager.KEY_5G_NR_SSRSRP_THRESHOLDS_INT_ARRAY,  // Boundaries: [-140 dBm, -44 dBm]
+                    intArrayOf(
+                        -128,  /* SIGNAL_STRENGTH_POOR */
+                        -118,  /* SIGNAL_STRENGTH_MODERATE */
+                        -108,  /* SIGNAL_STRENGTH_GOOD */
+                        -98,  /* SIGNAL_STRENGTH_GREAT */
+                    )
                 )
-            )
+            }
         }
 
         return bundle
