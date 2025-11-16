@@ -107,6 +107,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets(0.dp),
                     topBar = {
                         CenterAlignedTopAppBar(
                             title = {
