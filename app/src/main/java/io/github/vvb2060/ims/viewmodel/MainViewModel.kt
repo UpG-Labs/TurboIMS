@@ -1,16 +1,15 @@
 package io.github.vvb2060.ims.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
-import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.vvb2060.ims.BuildConfig
 import io.github.vvb2060.ims.R
 import io.github.vvb2060.ims.ShizukuProvider
+import io.github.vvb2060.ims.SimConfigManager
 import io.github.vvb2060.ims.model.Feature
 import io.github.vvb2060.ims.model.FeatureValue
 import io.github.vvb2060.ims.model.FeatureValueType
@@ -141,45 +140,10 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     fun onApplyConfiguration(selectedSim: SimSelection, map: Map<Feature, FeatureValue>) {
         viewModelScope.launch {
             // 保存配置到 SharedPreferences
-            saveConfiguration(selectedSim.subId, map)
+            SimConfigManager.saveConfiguration(application, selectedSim.subId, map)
 
-            // 构建传递给底层 ImsModifier 的配置 Bundle
-            val carrierName =
-                if (selectedSim.subId == -1) null else map[Feature.CARRIER_NAME]?.data as String?
-            val countryISO =
-                if (selectedSim.subId == -1) null else map[Feature.COUNTRY_ISO]?.data as String?
-            val imsUserAgent =
-                if (selectedSim.subId == -1) null else map[Feature.IMS_USER_AGENT]?.data as String?
-            val enableVoLTE = (map[Feature.VOLTE]?.data ?: true) as Boolean
-            val enableVoWiFi = (map[Feature.VOWIFI]?.data ?: true) as Boolean
-            val enableVT = (map[Feature.VT]?.data ?: true) as Boolean
-            val enableVoNR = (map[Feature.VONR]?.data ?: true) as Boolean
-            val enableCrossSIM = (map[Feature.CROSS_SIM]?.data ?: true) as Boolean
-            val enableUT = (map[Feature.UT]?.data ?: true) as Boolean
-            val enable5GNR = (map[Feature.FIVE_G_NR]?.data ?: true) as Boolean
-            val enable5GNROnlySA = (map[Feature.FIVE_G_NR_ONLY_SA]?.data ?: false) as Boolean
-            val enable5GThreshold = (map[Feature.FIVE_G_THRESHOLDS]?.data ?: true) as Boolean
-            val enableShow4GForLTE = (map[Feature.SHOW_4G_FOR_LTE]?.data ?: false) as Boolean
-
-            val bundle = ImsModifier.buildBundle(
-                carrierName,
-                countryISO,
-                imsUserAgent,
-                enableVoLTE,
-                enableVoWiFi,
-                enableVT,
-                enableVoNR,
-                enableCrossSIM,
-                enableUT,
-                enable5GNR,
-                enable5GNROnlySA,
-                enable5GThreshold,
-                enableShow4GForLTE
-            )
-            bundle.putInt(ImsModifier.BUNDLE_SELECT_SIM_ID, selectedSim.subId)
-
-            // 调用 Shizuku 服务进行实际修改
-            val resultMsg = ShizukuProvider.overrideImsConfig(application, bundle)
+            // 调用 SimConfigManager 进行实际修改
+            val resultMsg = SimConfigManager.applyConfiguration(application, selectedSim.subId, map)
             if (resultMsg == null) {
                 toast(application.getString(R.string.config_success_message))
             } else {
@@ -189,47 +153,10 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     }
 
     /**
-     * 将配置保存到 SharedPreferences 中以便下次加载。
-     */
-    private fun saveConfiguration(subId: Int, map: Map<Feature, FeatureValue>) {
-        application.getSharedPreferences("sim_config_$subId", Context.MODE_PRIVATE).edit {
-            clear() // 清除旧配置
-            map.forEach { (feature, value) ->
-                when (value.valueType) {
-                    FeatureValueType.BOOLEAN -> putBoolean(feature.name, value.data as Boolean)
-                    FeatureValueType.STRING -> putString(feature.name, value.data as String)
-                }
-            }
-        }
-    }
-
-    /**
      * 加载指定 subId 的配置。如果不存在则返回 null。
      */
     fun loadConfiguration(subId: Int): Map<Feature, FeatureValue>? {
-        val prefs = application.getSharedPreferences("sim_config_$subId", Context.MODE_PRIVATE)
-        if (prefs.all.isEmpty()) return null
-
-        val map = linkedMapOf<Feature, FeatureValue>()
-        Feature.entries.forEach { feature ->
-            if (prefs.contains(feature.name)) {
-                when (feature.valueType) {
-                    FeatureValueType.BOOLEAN -> {
-                        val data = prefs.getBoolean(feature.name, feature.defaultValue as Boolean)
-                        map[feature] = FeatureValue(data, feature.valueType)
-                    }
-
-                    FeatureValueType.STRING -> {
-                        val data =
-                            prefs.getString(feature.name, feature.defaultValue as String) ?: ""
-                        map[feature] = FeatureValue(data, feature.valueType)
-                    }
-                }
-            } else {
-                map[feature] = FeatureValue(feature.defaultValue, feature.valueType)
-            }
-        }
-        return map
+        return SimConfigManager.loadConfiguration(application, subId)
     }
 
     /**

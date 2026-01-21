@@ -5,10 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
-import io.github.vvb2060.ims.model.Feature
-import io.github.vvb2060.ims.model.FeatureValue
-import io.github.vvb2060.ims.model.FeatureValueType
-import io.github.vvb2060.ims.privileged.ImsModifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -81,10 +77,15 @@ class BootReceiver : BroadcastReceiver() {
             
             // Apply saved configuration for each SIM card that has one
             for (sim in simList) {
-                val savedConfig = loadConfiguration(context, sim.subId)
+                val savedConfig = SimConfigManager.loadConfiguration(context, sim.subId)
                 if (savedConfig != null) {
                     Log.i(TAG, "Applying saved configuration for SIM ${sim.subId} (${sim.displayName})")
-                    applyConfiguration(context, sim.subId, savedConfig)
+                    val resultMsg = SimConfigManager.applyConfiguration(context, sim.subId, savedConfig)
+                    if (resultMsg == null) {
+                        Log.i(TAG, "Successfully applied configuration for SIM ${sim.subId}")
+                    } else {
+                        Log.e(TAG, "Failed to apply configuration for SIM ${sim.subId}: $resultMsg")
+                    }
                 } else {
                     Log.d(TAG, "No saved configuration found for SIM ${sim.subId} (${sim.displayName})")
                 }
@@ -93,84 +94,6 @@ class BootReceiver : BroadcastReceiver() {
             Log.i(TAG, "Finished applying saved configurations on boot")
         } catch (e: Exception) {
             Log.e(TAG, "Error applying saved configurations on boot", e)
-        }
-    }
-
-    /**
-     * Loads saved configuration for a specific SIM card.
-     */
-    private fun loadConfiguration(context: Context, subId: Int): Map<Feature, FeatureValue>? {
-        val prefs = context.getSharedPreferences("sim_config_$subId", Context.MODE_PRIVATE)
-        if (prefs.all.isEmpty()) return null
-
-        val map = linkedMapOf<Feature, FeatureValue>()
-        Feature.entries.forEach { feature ->
-            if (prefs.contains(feature.name)) {
-                when (feature.valueType) {
-                    FeatureValueType.BOOLEAN -> {
-                        val data = prefs.getBoolean(feature.name, feature.defaultValue as Boolean)
-                        map[feature] = FeatureValue(data, feature.valueType)
-                    }
-                    FeatureValueType.STRING -> {
-                        val data = prefs.getString(feature.name, feature.defaultValue as String) ?: ""
-                        map[feature] = FeatureValue(data, feature.valueType)
-                    }
-                }
-            } else {
-                map[feature] = FeatureValue(feature.defaultValue, feature.valueType)
-            }
-        }
-        return map
-    }
-
-    /**
-     * Applies a configuration to a specific SIM card.
-     */
-    private suspend fun applyConfiguration(
-        context: Context,
-        subId: Int,
-        config: Map<Feature, FeatureValue>
-    ) {
-        try {
-            val carrierName = config[Feature.CARRIER_NAME]?.data as String?
-            val countryISO = config[Feature.COUNTRY_ISO]?.data as String?
-            val imsUserAgent = config[Feature.IMS_USER_AGENT]?.data as String?
-            val enableVoLTE = (config[Feature.VOLTE]?.data ?: true) as Boolean
-            val enableVoWiFi = (config[Feature.VOWIFI]?.data ?: true) as Boolean
-            val enableVT = (config[Feature.VT]?.data ?: true) as Boolean
-            val enableVoNR = (config[Feature.VONR]?.data ?: true) as Boolean
-            val enableCrossSIM = (config[Feature.CROSS_SIM]?.data ?: true) as Boolean
-            val enableUT = (config[Feature.UT]?.data ?: true) as Boolean
-            val enable5GNR = (config[Feature.FIVE_G_NR]?.data ?: true) as Boolean
-            val enable5GNROnlySA = (config[Feature.FIVE_G_NR_ONLY_SA]?.data ?: false) as Boolean
-            val enable5GThreshold = (config[Feature.FIVE_G_THRESHOLDS]?.data ?: true) as Boolean
-            val enableShow4GForLTE = (config[Feature.SHOW_4G_FOR_LTE]?.data ?: false) as Boolean
-
-            val bundle = ImsModifier.buildBundle(
-                carrierName,
-                countryISO,
-                imsUserAgent,
-                enableVoLTE,
-                enableVoWiFi,
-                enableVT,
-                enableVoNR,
-                enableCrossSIM,
-                enableUT,
-                enable5GNR,
-                enable5GNROnlySA,
-                enable5GThreshold,
-                enableShow4GForLTE
-            )
-            bundle.putInt(ImsModifier.BUNDLE_SELECT_SIM_ID, subId)
-
-            val resultMsg = ShizukuProvider.overrideImsConfig(context, bundle)
-            if (resultMsg == null) {
-                Log.i(TAG, "Successfully applied configuration for SIM $subId")
-            } else {
-                Log.e(TAG, "Failed to apply configuration for SIM $subId: $resultMsg")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception applying configuration for SIM $subId", e)
         }
     }
 }
