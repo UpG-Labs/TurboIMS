@@ -15,6 +15,10 @@ import rikka.shizuku.Shizuku
 /**
  * BootReceiver listens for device boot and Shizuku binder availability.
  * Once Shizuku is ready, it automatically applies saved configurations to all SIM cards.
+ * 
+ * Note: This receiver is triggered infrequently (only on boot), and the coroutine scope
+ * is designed to outlive the receiver's onReceive() context. The static job reference
+ * ensures we can cancel any previous attempts if multiple boot events occur.
  */
 class BootReceiver : BroadcastReceiver() {
     companion object {
@@ -22,6 +26,9 @@ class BootReceiver : BroadcastReceiver() {
         private const val MAX_SHIZUKU_WAIT_TIME_MS = 60000L // 60 seconds
         private const val SHIZUKU_CHECK_INTERVAL_MS = 1000L // 1 second
         
+        // Static job to track ongoing configuration application
+        // Synchronized to prevent race conditions from multiple boot events
+        @Volatile
         private var applyJob: Job? = null
     }
 
@@ -36,28 +43,31 @@ class BootReceiver : BroadcastReceiver() {
 
     /**
      * Waits for Shizuku to become available and then applies saved configurations.
+     * Uses a coroutine that outlives the receiver's onReceive() lifecycle.
      */
     private fun waitForShizukuAndApplyConfigs(context: Context) {
-        // Cancel any existing job
-        applyJob?.cancel()
-        
-        applyJob = CoroutineScope(Dispatchers.IO).launch {
-            var elapsedTime = 0L
+        // Synchronized cancellation and creation to prevent race conditions
+        synchronized(BootReceiver::class.java) {
+            applyJob?.cancel()
             
-            // Wait for Shizuku to be ready
-            while (elapsedTime < MAX_SHIZUKU_WAIT_TIME_MS) {
-                if (Shizuku.pingBinder() && 
-                    Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                    Log.i(TAG, "Shizuku is ready after ${elapsedTime}ms")
-                    applyAllSavedConfigurations(context)
-                    return@launch
+            applyJob = CoroutineScope(Dispatchers.IO).launch {
+                var elapsedTime = 0L
+                
+                // Wait for Shizuku to be ready
+                while (elapsedTime < MAX_SHIZUKU_WAIT_TIME_MS) {
+                    if (Shizuku.pingBinder() && 
+                        Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                        Log.i(TAG, "Shizuku is ready after ${elapsedTime}ms")
+                        applyAllSavedConfigurations(context)
+                        return@launch
+                    }
+                    
+                    delay(SHIZUKU_CHECK_INTERVAL_MS)
+                    elapsedTime += SHIZUKU_CHECK_INTERVAL_MS
                 }
                 
-                delay(SHIZUKU_CHECK_INTERVAL_MS)
-                elapsedTime += SHIZUKU_CHECK_INTERVAL_MS
+                Log.w(TAG, "Timeout waiting for Shizuku to start after ${MAX_SHIZUKU_WAIT_TIME_MS}ms")
             }
-            
-            Log.w(TAG, "Timeout waiting for Shizuku to start after ${MAX_SHIZUKU_WAIT_TIME_MS}ms")
         }
     }
 

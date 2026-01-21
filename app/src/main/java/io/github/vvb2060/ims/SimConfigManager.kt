@@ -52,9 +52,10 @@ object SimConfigManager {
         config: Map<Feature, FeatureValue>
     ): String? {
         return try {
-            val carrierName = config[Feature.CARRIER_NAME]?.data as String?
-            val countryISO = config[Feature.COUNTRY_ISO]?.data as String?
-            val imsUserAgent = config[Feature.IMS_USER_AGENT]?.data as String?
+            // For "all SIMs" option (subId == -1), don't set carrier-specific fields
+            val carrierName = if (subId == -1) null else config[Feature.CARRIER_NAME]?.data as String?
+            val countryISO = if (subId == -1) null else config[Feature.COUNTRY_ISO]?.data as String?
+            val imsUserAgent = if (subId == -1) null else config[Feature.IMS_USER_AGENT]?.data as String?
             val enableVoLTE = (config[Feature.VOLTE]?.data ?: true) as Boolean
             val enableVoWiFi = (config[Feature.VOWIFI]?.data ?: true) as Boolean
             val enableVT = (config[Feature.VT]?.data ?: true) as Boolean
