@@ -53,7 +53,23 @@ android {
         }
     }
     signingConfigs {
-        create("sign")
+        create("sign") {
+            // Access environment variables using System.getenv()
+            val keystoreFile = System.getenv("SIGN_KEY_STORE_FILE")
+            val keystorePassword = System.getenv("SIGN_KEY_STORE_PASSWORD")
+            val keyAlias = System.getenv("SIGN_KEY_ALIAS")
+            val keyPassword = System.getenv("SIGN_KEY_PASSWORD")
+
+            if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
+                storeFile = file(keystoreFile)
+                storePassword = keystorePassword
+                keyAlias = keyAlias
+                keyPassword = keyPassword
+            } else {
+                // Handle missing variables
+                println("Warning: Signing environment variables not fully set.")
+            }
+        }
     }
     buildTypes {
         debug {
