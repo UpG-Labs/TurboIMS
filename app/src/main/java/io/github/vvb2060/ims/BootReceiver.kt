@@ -4,7 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -75,6 +78,9 @@ class BootReceiver : BroadcastReceiver() {
      * Applies saved configurations to all SIM cards that have saved preferences.
      */
     private suspend fun applyAllSavedConfigurations(context: Context) {
+        var successCount = 0
+        var failureCount = 0
+        
         try {
             // Read all available SIM cards
             val simList = ShizukuProvider.readSimInfoList(context)
@@ -93,8 +99,10 @@ class BootReceiver : BroadcastReceiver() {
                     val resultMsg = SimConfigManager.applyConfiguration(context, sim.subId, savedConfig)
                     if (resultMsg == null) {
                         Log.i(TAG, "Successfully applied configuration for SIM ${sim.subId}")
+                        successCount++
                     } else {
                         Log.e(TAG, "Failed to apply configuration for SIM ${sim.subId}: $resultMsg")
+                        failureCount++
                     }
                 } else {
                     Log.d(TAG, "No saved configuration found for SIM ${sim.subId} (${sim.displayName})")
@@ -102,8 +110,41 @@ class BootReceiver : BroadcastReceiver() {
             }
             
             Log.i(TAG, "Finished applying saved configurations on boot")
+            
+            // Show toast notification on main thread
+            if (successCount > 0 || failureCount > 0) {
+                showToast(context, successCount, failureCount)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error applying saved configurations on boot", e)
+            showErrorToast(context, e.message ?: "Unknown error")
+        }
+    }
+    
+    /**
+     * Shows a toast message on the main thread with configuration results.
+     */
+    private fun showToast(context: Context, successCount: Int, failureCount: Int) {
+        Handler(Looper.getMainLooper()).post {
+            val message = when {
+                failureCount == 0 && successCount > 0 -> 
+                    context.getString(R.string.config_success_message)
+                failureCount > 0 && successCount == 0 -> 
+                    context.getString(R.string.config_failed, "applied to 0 SIMs")
+                else -> 
+                    "Applied to $successCount SIM(s), failed for $failureCount"
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    /**
+     * Shows an error toast on the main thread.
+     */
+    private fun showErrorToast(context: Context, error: String) {
+        Handler(Looper.getMainLooper()).post {
+            val message = context.getString(R.string.config_failed, error)
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
     }
 }
