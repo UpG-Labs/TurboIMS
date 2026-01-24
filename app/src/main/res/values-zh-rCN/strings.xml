@@ -71,6 +71,8 @@
     <string name="config_success_message">配置已应用！</string>
     <string name="config_success_reset_message">配置已重置！</string>
     <string name="config_failed">配置失败：%s</string>
+    <string name="config_all_failed">所有配置均应用失败</string>
+    <string name="config_mixed_result">应用到 %1$d 个 SIM 卡，%2$d 个失败</string>
     <string name="load_config_history_success">已加载保存的配置历史</string>
     <string name="load_config_default_success">已加载默认配置</string>
     <string name="update_shizuku">请更新 Shizuku 到最新版本</string>
