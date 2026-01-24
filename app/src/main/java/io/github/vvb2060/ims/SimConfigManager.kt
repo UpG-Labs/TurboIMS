@@ -103,6 +103,7 @@ object SimConfigManager {
                     FeatureValueType.STRING -> putString(feature.name, value.data as String)
                 }
             }
-        }.apply()
+            apply()
+        }
     }
 }
