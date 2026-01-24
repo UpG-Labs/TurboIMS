@@ -48,7 +48,6 @@ class ImsModifier : Instrumentation() {
             if (carrierName?.isNotBlank() == true) {
                 bundle.putBoolean(CarrierConfigManager.KEY_CARRIER_NAME_OVERRIDE_BOOL, true)
                 bundle.putString(CarrierConfigManager.KEY_CARRIER_NAME_STRING, carrierName)
-                bundle.putString(CarrierConfigManager.KEY_CARRIER_CONFIG_VERSION_STRING, ":3")
             }
             // 运营商国家码
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -72,12 +71,12 @@ class ImsModifier : Instrumentation() {
                 bundle.putBoolean(CarrierConfigManager.KEY_CARRIER_VOLTE_AVAILABLE_BOOL, true)
                 bundle.putBoolean(CarrierConfigManager.KEY_EDITABLE_ENHANCED_4G_LTE_BOOL, true)
                 bundle.putBoolean(CarrierConfigManager.KEY_HIDE_ENHANCED_4G_LTE_BOOL, false)
-                bundle.putBoolean(CarrierConfigManager.KEY_HIDE_LTE_PLUS_DATA_ICON_BOOL, false)
             }
 
             // LTE 显示为 4G
             if (enableShow4GForLTE) {
-                bundle.putBoolean("show_4g_for_lte_data_icon_bool", true)
+                bundle.putBoolean(CarrierConfigManager.KEY_SHOW_4G_FOR_LTE_DATA_ICON_BOOL, true)
+                bundle.putBoolean(CarrierConfigManager.KEY_HIDE_LTE_PLUS_DATA_ICON_BOOL, true)
             }
 
             // VT (视频通话) 配置
@@ -100,6 +99,10 @@ class ImsModifier : Instrumentation() {
                     CarrierConfigManager.KEY_ENABLE_CROSS_SIM_CALLING_ON_OPPORTUNISTIC_DATA_BOOL,
                     true
                 )
+                bundle.putInt(
+                    CarrierConfigManager.KEY_CROSS_SIM_SPN_FORMAT_INT,
+                    CarrierConfigManager.CROSS_SIM_SPN_FORMAT_CARRIER_NAME_WITH_BRANDING
+                )
             }
 
             // VoWiFi 配置
@@ -111,10 +114,7 @@ class ImsModifier : Instrumentation() {
                 )
                 bundle.putBoolean(CarrierConfigManager.KEY_EDITABLE_WFC_MODE_BOOL, true)
                 bundle.putBoolean(CarrierConfigManager.KEY_EDITABLE_WFC_ROAMING_MODE_BOOL, true)
-                // KEY_SHOW_WIFI_CALLING_ICON_IN_STATUS_BAR_BOOL
-                bundle.putBoolean("show_wifi_calling_icon_in_status_bar_bool", true)
-                // KEY_WFC_SPN_FORMAT_IDX_INT
-                bundle.putInt("wfc_spn_format_idx_int", 6)
+                bundle.putInt(CarrierConfigManager.KEY_WFC_SPN_FORMAT_IDX_INT, 1)
             }
 
             // VoNR (5G 语音) 配置
