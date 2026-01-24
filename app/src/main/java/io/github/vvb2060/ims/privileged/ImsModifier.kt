@@ -114,7 +114,7 @@ class ImsModifier : Instrumentation() {
                 )
                 bundle.putBoolean(CarrierConfigManager.KEY_EDITABLE_WFC_MODE_BOOL, true)
                 bundle.putBoolean(CarrierConfigManager.KEY_EDITABLE_WFC_ROAMING_MODE_BOOL, true)
-                bundle.putInt(CarrierConfigManager.KEY_WFC_SPN_FORMAT_IDX_INT, 1)
+                bundle.putInt("wfc_spn_format_idx_int", 1)
             }
 
             // VoNR (5G 语音) 配置
