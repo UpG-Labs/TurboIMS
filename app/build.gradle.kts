@@ -60,7 +60,7 @@ android {
             val kAlias = System.getenv("SIGN_KEY_ALIAS")
             val kPassword = System.getenv("SIGN_KEY_PASSWORD")
 
-            if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
+            if (keystoreFile != null && keystorePassword != null && kAlias != null && kPassword != null) {
                 storeFile = file(keystoreFile)
                 storePassword = keystorePassword
                 keyAlias = kAlias
