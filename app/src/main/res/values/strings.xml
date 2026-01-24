@@ -71,6 +71,7 @@
     <string name="config_success_message">Configuration applied!</string>
     <string name="config_success_reset_message">Configuration reset!</string>
     <string name="config_failed">Configuration failed: %s</string>
+    <string name="config_all_failed">All configurations failed to apply</string>
     <string name="config_mixed_result">Applied to %1$d SIM(s), failed for %2$d</string>
     <string name="load_config_history_success">Loaded saved configuration history</string>
     <string name="load_config_default_success">Loaded default configuration</string>

@@ -133,7 +133,7 @@ class BootReceiver : BroadcastReceiver() {
                 failureCount == 0 && successCount > 0 -> 
                     context.getString(R.string.config_success_message)
                 failureCount > 0 && successCount == 0 -> 
-                    context.getString(R.string.config_failed, "All configurations failed to apply")
+                    context.getString(R.string.config_all_failed)
                 else -> 
                     context.getString(R.string.config_mixed_result, successCount, failureCount)
             }
