@@ -49,6 +49,9 @@ class BootReceiver : BroadcastReceiver() {
      * Uses a coroutine that outlives the receiver's onReceive() lifecycle.
      */
     private fun waitForShizukuAndApplyConfigs(context: Context) {
+        // Use application context to ensure validity beyond receiver lifecycle
+        val appContext = context.applicationContext
+        
         // Synchronized cancellation and creation to prevent race conditions
         synchronized(BootReceiver::class.java) {
             applyJob?.cancel()
@@ -61,7 +64,7 @@ class BootReceiver : BroadcastReceiver() {
                     if (Shizuku.pingBinder() && 
                         Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
                         Log.i(TAG, "Shizuku is ready after ${elapsedTime}ms")
-                        applyAllSavedConfigurations(context)
+                        applyAllSavedConfigurations(appContext)
                         return@launch
                     }
                     
@@ -130,9 +133,9 @@ class BootReceiver : BroadcastReceiver() {
                 failureCount == 0 && successCount > 0 -> 
                     context.getString(R.string.config_success_message)
                 failureCount > 0 && successCount == 0 -> 
-                    context.getString(R.string.config_failed, "applied to 0 SIMs")
+                    context.getString(R.string.config_failed, "All configurations failed to apply")
                 else -> 
-                    "Applied to $successCount SIM(s), failed for $failureCount"
+                    context.getString(R.string.config_mixed_result, successCount, failureCount)
             }
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
