@@ -80,9 +80,4 @@
 
     <!-- Logcat -->
     <string name="title_filter_log_level">Select filter log level</string>
-
-    <!-- Boot Configuration Notification -->
-    <string name="boot_config_channel_name">Boot Configuration</string>
-    <string name="boot_config_channel_description">Notifications when configurations are applied on device boot</string>
-    <string name="boot_config_notification_title">TurboIMS Configuration Applied</string>
 </resources>

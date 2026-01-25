@@ -80,9 +80,4 @@
 
     <!-- Logcat -->
     <string name="title_filter_log_level">请选择日志过滤等级</string>
-
-    <!-- Boot Configuration Notification -->
-    <string name="boot_config_channel_name">启动配置</string>
-    <string name="boot_config_channel_description">设备启动时应用配置的通知</string>
-    <string name="boot_config_notification_title">TurboIMS 配置已应用</string>
 </resources>
