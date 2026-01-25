@@ -1,13 +1,12 @@
 package io.github.vvb2060.ims
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +27,7 @@ class BootReceiver : BroadcastReceiver() {
         private const val TAG = "BootReceiver"
         private const val MAX_SHIZUKU_WAIT_TIME_MS = 60000L // 60 seconds
         private const val SHIZUKU_CHECK_INTERVAL_MS = 1000L // 1 second
+        private const val BOOT_CONFIG_NOTIFICATION_ID = 1001
         
         // Static job to track ongoing configuration application
         // Synchronized to prevent race conditions from multiple boot events
@@ -114,40 +114,56 @@ class BootReceiver : BroadcastReceiver() {
             
             Log.i(TAG, "Finished applying saved configurations on boot")
             
-            // Show toast notification on main thread
+            // Show notification
             if (successCount > 0 || failureCount > 0) {
-                showToast(context, successCount, failureCount)
+                showNotification(context, successCount, failureCount)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error applying saved configurations on boot", e)
-            showErrorToast(context, e.message ?: "Unknown error")
+            showErrorNotification(context, e.message ?: "Unknown error")
         }
     }
     
     /**
-     * Shows a toast message on the main thread with configuration results.
+     * Shows a notification with configuration results.
      */
-    private fun showToast(context: Context, successCount: Int, failureCount: Int) {
-        Handler(Looper.getMainLooper()).post {
-            val message = when {
-                failureCount == 0 && successCount > 0 -> 
-                    context.getString(R.string.config_success_message)
-                failureCount > 0 && successCount == 0 -> 
-                    context.getString(R.string.config_all_failed)
-                else -> 
-                    context.getString(R.string.config_mixed_result, successCount, failureCount)
-            }
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    private fun showNotification(context: Context, successCount: Int, failureCount: Int) {
+        val message = when {
+            failureCount == 0 && successCount > 0 -> 
+                context.getString(R.string.config_success_message)
+            failureCount > 0 && successCount == 0 -> 
+                context.getString(R.string.config_all_failed)
+            else -> 
+                context.getString(R.string.config_mixed_result, successCount, failureCount)
         }
+        
+        val notification = NotificationCompat.Builder(context, Application.BOOT_CONFIG_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.boot_config_notification_title))
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+        
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(BOOT_CONFIG_NOTIFICATION_ID, notification)
     }
     
     /**
-     * Shows an error toast on the main thread.
+     * Shows an error notification.
      */
-    private fun showErrorToast(context: Context, error: String) {
-        Handler(Looper.getMainLooper()).post {
-            val message = context.getString(R.string.config_failed, error)
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-        }
+    private fun showErrorNotification(context: Context, error: String) {
+        val message = context.getString(R.string.config_failed, error)
+        
+        val notification = NotificationCompat.Builder(context, Application.BOOT_CONFIG_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.boot_config_notification_title))
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+        
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(BOOT_CONFIG_NOTIFICATION_ID, notification)
     }
 }
