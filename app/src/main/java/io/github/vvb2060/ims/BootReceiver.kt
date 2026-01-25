@@ -145,7 +145,7 @@ class BootReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .build()
         
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
         notificationManager.notify(BOOT_CONFIG_NOTIFICATION_ID, notification)
     }
     
@@ -163,7 +163,7 @@ class BootReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .build()
         
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
         notificationManager.notify(BOOT_CONFIG_NOTIFICATION_ID, notification)
     }
 }
