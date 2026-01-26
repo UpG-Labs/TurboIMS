@@ -128,26 +128,41 @@ class BootReceiver : BroadcastReceiver() {
      * Shows a toast message on the main thread with configuration results.
      */
     private fun showToast(context: Context, successCount: Int, failureCount: Int) {
-        Handler(Looper.getMainLooper()).post {
-            val message = when {
-                failureCount == 0 && successCount > 0 -> 
-                    context.getString(R.string.config_success_message)
-                failureCount > 0 && successCount == 0 -> 
-                    context.getString(R.string.config_all_failed)
-                else -> 
-                    context.getString(R.string.config_mixed_result, successCount, failureCount)
+        val mainHandler = Handler(Looper.getMainLooper())
+        var runnable: Runnable
+        
+        runnable = object : Runnable {
+            override fun run() {
+                val message = when {
+                    failureCount == 0 && successCount > 0 -> 
+                        context.getString(R.string.config_success_message)
+                    failureCount > 0 && successCount == 0 -> 
+                        context.getString(R.string.config_all_failed)
+                    else -> 
+                        context.getString(R.string.config_mixed_result, successCount, failureCount)
+                }
+
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
+
+        mainHandler.post(runnable)
     }
     
     /**
      * Shows an error toast on the main thread.
      */
     private fun showErrorToast(context: Context, error: String) {
-        Handler(Looper.getMainLooper()).post {
-            val message = context.getString(R.string.config_failed, error)
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        val mainHandler = Handler(Looper.getMainLooper())
+        var runnable: Runnable
+
+        runnable = object : Runnable {
+            override fun run() {
+                val message = context.getString(R.string.config_failed, error)
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
         }
+
+        mainHandler.post(runnable)
     }
 }
