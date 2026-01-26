@@ -116,11 +116,15 @@ class BootReceiver : BroadcastReceiver() {
             
             // Show toast notification on main thread
             if (successCount > 0 || failureCount > 0) {
-                showToast(context, successCount, failureCount)
+                withContext(Dispatchers.Main) {
+                    showToast(context, successCount, failureCount)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error applying saved configurations on boot", e)
-            showErrorToast(context, e.message ?: "Unknown error")
+            withContext(Dispatchers.Main) {
+                showErrorToast(context, e.message ?: "Unknown error")
+            }
         }
     }
     
