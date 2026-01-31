@@ -1,8 +1,14 @@
 package io.github.vvb2060.ims.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +50,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -109,6 +116,21 @@ class MainActivity : BaseActivity() {
                     featureSwitches.putAll(savedConfig)
                 } else {
                     featureSwitches.putAll(viewModel.loadDefaultPreferences())
+                }
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) {
+                // permission granted or denied, we don't really care
+            }
+            LaunchedEffect(Unit) {
+                if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
         }
@@ -185,12 +207,14 @@ class MainActivity : BaseActivity() {
                                             FeatureValue(false, FeatureValueType.BOOLEAN)
                                     }
                                 }
+
                                 Feature.FIVE_G_NR -> {
                                     if (enabled) {
                                         featureSwitches[Feature.FIVE_G_NR_ONLY_SA] =
                                             FeatureValue(false, FeatureValueType.BOOLEAN)
                                     }
                                 }
+
                                 else -> Unit
                             }
                         }
