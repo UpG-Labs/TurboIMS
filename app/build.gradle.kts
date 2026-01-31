@@ -131,4 +131,4 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
 }
 
-// apply(from = rootProject.file("signing.gradle"))
+apply(from = rootProject.file("signing.gradle"))
