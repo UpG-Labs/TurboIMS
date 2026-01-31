@@ -1,0 +1,122 @@
+package io.github.vvb2060.ims
+
+import android.content.Context
+import android.content.pm.PackageManager
+import android.util.Log
+import android.widget.Toast
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import rikka.shizuku.Shizuku
+
+class BootWorker(appContext: Context, workerParams: WorkerParameters) :
+        CoroutineWorker(appContext, workerParams) {
+
+    companion object {
+        private const val TAG = "BootWorker"
+        private const val MAX_SHIZUKU_WAIT_TIME_MS = 60000L // 60 seconds
+        private const val SHIZUKU_CHECK_INTERVAL_MS = 1000L // 1 second
+    }
+
+    override suspend fun doWork(): Result {
+        Log.i(TAG, "BootWorker started, waiting for Shizuku")
+
+        var elapsedTime = 0L
+
+        // Wait for Shizuku to be ready
+        while (elapsedTime < MAX_SHIZUKU_WAIT_TIME_MS) {
+            if (Shizuku.pingBinder() &&
+                            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.i(TAG, "Shizuku is ready after ${elapsedTime}ms")
+                applyAllSavedConfigurations(applicationContext)
+                return Result.success()
+            }
+
+            delay(SHIZUKU_CHECK_INTERVAL_MS)
+            elapsedTime += SHIZUKU_CHECK_INTERVAL_MS
+        }
+
+        Log.w(TAG, "Timeout waiting for Shizuku to start after ${MAX_SHIZUKU_WAIT_TIME_MS}ms")
+        return Result.failure()
+    }
+
+    /** Applies saved configurations to all SIM cards that have saved preferences. */
+    private suspend fun applyAllSavedConfigurations(context: Context) {
+        var successCount = 0
+        var failureCount = 0
+
+        try {
+            // Read all available SIM cards
+            val simList = ShizukuProvider.readSimInfoList(context)
+            Log.i(TAG, "Found ${simList.size} SIM cards")
+
+            if (simList.isEmpty()) {
+                Log.w(TAG, "No SIM cards found, skipping configuration application")
+                return
+            }
+
+            // Apply saved configuration for each SIM card that has one
+            for (sim in simList) {
+                val savedConfig = SimConfigManager.loadConfiguration(context, sim.subId)
+                if (savedConfig != null) {
+                    Log.i(
+                            TAG,
+                            "Applying saved configuration for SIM ${sim.subId} (${sim.displayName})"
+                    )
+                    val resultMsg =
+                            SimConfigManager.applyConfiguration(context, sim.subId, savedConfig)
+                    if (resultMsg == null) {
+                        Log.i(TAG, "Successfully applied configuration for SIM ${sim.subId}")
+                        successCount++
+                    } else {
+                        Log.e(TAG, "Failed to apply configuration for SIM ${sim.subId}: $resultMsg")
+                        failureCount++
+                    }
+                } else {
+                    Log.d(
+                            TAG,
+                            "No saved configuration found for SIM ${sim.subId} (${sim.displayName})"
+                    )
+                }
+            }
+
+            Log.i(TAG, "Finished applying saved configurations on boot")
+
+            // Show toast notification on main thread
+            if (successCount > 0 || failureCount > 0) {
+                withContext(Dispatchers.Main) { showToast(context, successCount, failureCount) }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error applying saved configurations on boot", e)
+            withContext(Dispatchers.Main) { showErrorToast(context, e.message ?: "Unknown error") }
+        }
+    }
+
+    /** Shows a toast message on the main thread with configuration results. */
+    private fun showToast(context: Context, successCount: Int, failureCount: Int) {
+        val message =
+                when {
+                    failureCount == 0 && successCount > 0 ->
+                            context.getString(R.string.config_success_message)
+                    failureCount > 0 && successCount == 0 ->
+                            context.getString(R.string.config_all_failed)
+                    else ->
+                            context.getString(
+                                    R.string.config_mixed_result,
+                                    successCount,
+                                    failureCount
+                            )
+                }
+
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
+
+    /** Shows an error toast on the main thread. */
+    private fun showErrorToast(context: Context, error: String) {
+        val message = context.getString(R.string.config_failed, error)
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
+}
